@@ -103,7 +103,10 @@ int main(int argc, char* argv[])
 				breakOnNl = 1;
 				break;
 			default:
-				fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+				fprintf(stderr, "Options: \n");
+				fprintf(stderr, "\t-c\tHighlight control \x1B[1;33mcharacters\x1B[m\n");
+				fprintf(stderr, "\t-u\tHighlight UTF-8 Sequences (\x1B[44mvalid\x1B[m/\x1B[41minvalid\x1B[m)\n");
+				fprintf(stderr, "\t-n\tBreak on LF / 0x0A\n");
 				return 1;
 		}
 	}
