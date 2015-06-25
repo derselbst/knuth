@@ -22,7 +22,7 @@ void flushLine() {
 	unsigned int bytesLeft = bpl - (currentPosition - lineStart);
 
 	if (bytesLeft > 0) {
-		int spacesLeft = ((bytesLeft) * 3) - 1 + (bytesLeft / 8);
+		int spacesLeft = ((bytesLeft) * 3) - 1 + ((bytesLeft - 1) / 8);
 		while(spacesLeft--) printf(" ");
 	}	
 
