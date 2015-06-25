@@ -121,7 +121,6 @@ int main(int argc, char* argv[])
 			putChars(c, 1, "2");
 		} else if (*c < 32 && hlCtrl) {
 			putChars(c, 1, "1;33");
-			if (breakOnNl && *c == 0x0A) flushLine();
 		} else if (*c > 0x7F && hlUnicode) {
 			int sequenceLength = 0;
 			int foundLength = 1;
@@ -160,6 +159,7 @@ int main(int argc, char* argv[])
 			}
 		} else {
 			putChars(c, 1, 0);
+			if (breakOnNl && *c == 0x0A) flushLine();
 		}
 
 		fflush(stdout);
