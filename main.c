@@ -112,55 +112,55 @@ int main(int argc, char* argv[])
 	ascBuf = (char*)malloc(bpl * 16);
 
 	unsigned char* c = (char*)malloc(15);
-	unsigned charLength = 1;
+	unsigned eatenLength = 1;
 
 	while(fread(c, 1, 1, stdin) == 1) {
 		RETRY:
-		charLength = 1;
+		eatenLength = 1;
 		if (*c == 0) {
 			putChars(c, 1, "2");
 		} else if (*c < 32 && hlCtrl) {
 			putChars(c, 1, "1;33");
 		} else if (*c > 0x7F && hlUnicode) {
-			int sequenceLength = 0;
-			int foundLength = 1;
+			int expectedLength = 0;
+			int validLength = 1;
 			char* style="44";
 			if (*c < 0xC2) { // continuation or overlong
-				sequenceLength = 1;
+				expectedLength = 1;
 				style = "41";
 			} else if (*c < 0xE0) {
-				sequenceLength = 2;
+				expectedLength = 2;
 			} else if (*c < 0xF0) {
-				sequenceLength = 3;
+				expectedLength = 3;
 			} else if (*c < 0xF8) {
-				sequenceLength = 4;
+				expectedLength = 4;
 			} else if (*c < 0xFC) {
-				sequenceLength = 5;
+				expectedLength = 5;
 			} else if (*c < 0xFE) {
-				sequenceLength = 6;
+				expectedLength = 6;
 			} else if (*c < 0xFF) {
-				sequenceLength = 7;
+				expectedLength = 7;
 			} else {
-				sequenceLength = 1;
+				expectedLength = 1;
 				style = "41";
 			}
 
-			while(charLength < sequenceLength) {
-				if (fread(c + charLength, 1, 1, stdin) < 1) break;
-				charLength++;
-				if ((*(c + charLength - 1) & 0xC0) == 0x80) {
-					foundLength++;
+			while(eatenLength < expectedLength) {
+				if (fread(c + eatenLength, 1, 1, stdin) < 1) break;
+				eatenLength++;
+				if ((*(c + eatenLength - 1) & 0xC0) == 0x80) {
+					validLength++;
 				} else {
 					break;
 				}
 			}
 
-			if (foundLength != sequenceLength) style = "41";
+			if (validLength != expectedLength) style = "41";
 
-			putChars(c, foundLength, style);
+			putChars(c, validLength, style);
 
-			if (foundLength != charLength) {
-				*c = *(c + charLength - 1);
+			if (validLength != eatenLength) {
+				*c = *(c + eatenLength - 1);
 				goto RETRY;
 			}
 		} else {
