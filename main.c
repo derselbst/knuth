@@ -128,19 +128,25 @@ int main(int argc, char* argv[])
 			if (*c < 0xC2) { // continuation or overlong
 				sequenceLength = 1;
 				style = "41";
-			} else if (*c < 0xE0) { // 2-Byte sequence
+			} else if (*c < 0xE0) {
 				sequenceLength = 2;
-			} else if (*c < 0xF0) { // 3-Byte sequence
+			} else if (*c < 0xF0) {
 				sequenceLength = 3;
-			} else if (*c < 0xF5) { // 4-Byte sequence
+			} else if (*c < 0xF8) {
 				sequenceLength = 4;
+			} else if (*c < 0xFC) {
+				sequenceLength = 5;
+			} else if (*c < 0xFE) {
+				sequenceLength = 6;
+			} else if (*c < 0xFF) {
+				sequenceLength = 7;
 			} else {
 				sequenceLength = 1;
 				style = "41";
 			}
 
 			while(charLength < sequenceLength) {
-				fread(c + charLength, 1, 1, stdin);
+				if (fread(c + charLength, 1, 1, stdin) < 1) break;
 				charLength++;
 				if ((*(c + charLength - 1) & 0xC0) == 0x80) {
 					foundLength++;
