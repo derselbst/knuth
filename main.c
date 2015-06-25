@@ -4,8 +4,7 @@
 #include <strings.h>
 #include <unistd.h>
 
-short hlCtrl = 0;
-short hlUnicode = 0;
+short colorize = 0;
 short breakOnNl = 0;
 char* seperator = " ";
 
@@ -91,21 +90,23 @@ int main(int argc, char* argv[])
 	char opt;
 	FILE* source = stdin;
 
-	while ((opt = getopt (argc, argv, "cun")) != -1) {
+	while ((opt = getopt (argc, argv, "snc:")) != -1) {
 		switch (opt) {
-			case 'c':
-				hlCtrl = 1;
+			case 's':
+				colorize = 1;
 				break;
-			case 'u':
-				hlUnicode = 1;
+			case 'c':
+				bpl = atoi(optarg);
+				if (bpl < 2) bpl = 2;
+				if (bpl > 1024) bpl = 1024;
 				break;
 			case 'n':
 				breakOnNl = 1;
 				break;
 			default:
 				fprintf(stderr, "Options: \n");
-				fprintf(stderr, "\t-c\tHighlight control \x1B[1;33mcharacters\x1B[m\n");
-				fprintf(stderr, "\t-u\tHighlight UTF-8 Sequences (\x1B[44mvalid\x1B[m/\x1B[41minvalid\x1B[m)\n");
+				fprintf(stderr, "\t-c n\tSet byte count per line (default 16)\n");
+				fprintf(stderr, "\t-s\tHighlight special chars (\x1B[1;33mctrl\x1B[m/\x1B[44mUTF-8\x1B[m/\x1B[41minvalid\x1B[m)\n");
 				fprintf(stderr, "\t-n\tBreak on LF / 0x0A\n");
 				return 1;
 		}
@@ -122,9 +123,9 @@ int main(int argc, char* argv[])
 		eatenLength = 1;
 		if (*c == 0) {
 			putChars(c, 1, "2");
-		} else if (*c < 32 && hlCtrl) {
+		} else if (*c < 32 && colorize) {
 			putChars(c, 1, "1;33");
-		} else if (*c > 0x7F && hlUnicode) {
+		} else if (*c > 0x7F && colorize) {
 			int expectedLength = 0;
 			int validLength = 1;
 			char* style="44";
