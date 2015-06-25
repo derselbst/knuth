@@ -43,6 +43,7 @@ void putChars(unsigned char* data, unsigned int length, char* style) {
 	int style_enabled = 0;
 
 	for(i = 0; i < length; i++) {
+
 		if (currentPosition == lineStart) {
 			if (style_enabled) setStyle("");
 			printf("%08X | ", currentPosition);
@@ -107,8 +108,8 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	temp = (char*)malloc(15);
-	ascBuf = (char*)malloc(bpl * 8);
+	temp = (char*)malloc(30);
+	ascBuf = (char*)malloc(bpl * 16);
 
 	unsigned char* c = (char*)malloc(15);
 	unsigned charLength = 1;
@@ -116,7 +117,7 @@ int main(int argc, char* argv[])
 	while(fread(c, 1, 1, stdin) == 1) {
 		RETRY:
 		charLength = 1;
-		if (*c == 0 && hlCtrl) {
+		if (*c == 0) {
 			putChars(c, 1, "2");
 		} else if (*c < 32 && hlCtrl) {
 			putChars(c, 1, "1;33");
