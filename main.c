@@ -164,9 +164,10 @@ int main(int argc, char* argv[])
 				goto RETRY;
 			}
 		} else {
-			putChars(c, 1, 0);
-			if (breakOnNl && *c == 0x0A) flushLine();
+			putChars(c, 1, 0);			
 		}
+
+		if (breakOnNl && *c == 0x0A) flushLine();
 
 		fflush(stdout);
 	}
