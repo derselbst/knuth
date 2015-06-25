@@ -7,6 +7,7 @@ Convert binary data into human-readable hex code.
 - Can be used to analyse Charset-related Bugs (Like in MySQL Charset Hell)
 - Fully streamable: displays incoming data as soon as possible
 
-# Screenshot
+# Screenshots
 
+![Screenshot](/screenshot_random.png?raw=true "Some random bytes")
 ![Screenshot](/screenshot_elf.png?raw=true "Part of an ELF file")
