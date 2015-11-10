@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 			default:
 				fprintf(stderr, "Options: \n");
 				fprintf(stderr, "\t-c n\tSet byte count per line (default 16)\n");
-				fprintf(stderr, "\t-s\tHighlight special chars (\x1B[1;33mctrl\x1B[m/\x1B[44mUTF-8\x1B[m/\x1B[41minvalid\x1B[m)\n");
+				fprintf(stderr, "\t-s\tHighlight special chars and UTF-8 sequences
 				fprintf(stderr, "\t-n\tBreak on LF / 0x0A\n");
 				return 1;
 		}

@@ -1,5 +1,5 @@
 build:
-	gcc main.c -o knuth
+	gcc main.c -lm -o knuth
 
 install:
 	cp knuth /usr/bin
