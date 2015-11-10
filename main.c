@@ -3,6 +3,7 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#include <math.h>
 
 short colorize = 0;
 short breakOnNl = 0;
@@ -21,19 +22,19 @@ void flushLine() {
 	unsigned int bytesLeft = bpl - (currentPosition - lineStart);
 
 	if (bytesLeft > 0) {
-		int spacesLeft = ((bytesLeft) * 3) - 1 + ((bytesLeft - 1) / 8);
+		int spacesLeft = ((bytesLeft) * 3) - 1 + ceil((bytesLeft - 1) / 8.0);
 		while(spacesLeft--) printf(" ");
 	}	
 
-	printf(" | %s\n", ascBuf, currentPosition);
-	
+	printf(" | %s\n", ascBuf);
+
 	ascBuf[0]='\0';
 	lineStart = currentPosition;
 }
 
 void setStyle(char* style) {
 	sprintf(temp, "\x1B[%sm", style);
-	printf(temp);
+	printf("%s", temp);
 	strcat(ascBuf, temp);
 }
 
@@ -77,9 +78,9 @@ void putChars(unsigned char* data, unsigned int length, char* style) {
 			style_enabled = 0;
 		} else {
 			if ((currentPosition - lineStart) % 8 == 0) {
-				printf(seperator);
+				printf("%s", seperator);
 			}
-			printf(seperator);
+			printf("%s", seperator);
 		}
 
 	}
