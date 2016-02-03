@@ -5,6 +5,39 @@
 #include <unistd.h>
 #include <math.h>
 
+// more Select Graphic Rendition (SGR) parameters:
+// https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_codes
+#define STYLE_RESET      "0"
+#define STYLE_BOLD       "1"
+#define STYLE_FAINT      "2"
+#define STYLE_ITALIC     "3"
+#define STYLE_UNDERLINE  "4"
+#define STYLE_BLINK      "5" // slow less than 2.5Hz
+#define STYLE_BLINK_FAST "6" // fast, more than 2.5Hz
+#define STYLE_INVERSE    "7" // swap foreground and background
+#define STYLE_HIDDEN     "8"
+
+
+// Foreground Colors
+#define FORE_BLACK   "30"
+#define FORE_RED     "31"
+#define FORE_GREEN   "32"
+#define FORE_YELLOW  "33"
+#define FORE_BLUE    "34"
+#define FORE_MAGENTA "35"
+#define FORE_CYAN    "36"
+#define FORE_WHITE   "37"
+
+// Background Colours
+#define BACK_BLACK   "40"
+#define BACK_RED     "41"
+#define BACK_GREEN   "42"
+#define BACK_YELLOW  "43"
+#define BACK_BLUE    "44"
+#define BACK_MAGENTA "45"
+#define BACK_CYAN    "46"
+#define BACK_WHITE   "47"
+
 short colorize = 0;
 short breakOnNl = 0;
 char* seperator = " ";
@@ -124,16 +157,16 @@ int main(int argc, char* argv[])
 		RETRY:
 		eatenLength = 1;
 		if (*c == 0) {
-			putChars(c, 1, "2");
+			putChars(c, 1, STYLE_FAINT);
 		} else if (*c < 32 && colorize) {
-			putChars(c, 1, "1;33");
+			putChars(c, 1, STYLE_BOLD";"FORE_YELLOW);
 		} else if (*c > 0x7F && colorize) {
 			int expectedLength = 0;
 			int validLength = 1;
-			char* style="44";
+			char* style=BACK_BLUE;
 			if (*c < 0xC2) { // continuation or overlong
 				expectedLength = 1;
-				style = "41";
+				style = BACK_RED;
 			} else if (*c < 0xE0) {
 				expectedLength = 2;
 			} else if (*c < 0xF0) {
@@ -148,7 +181,7 @@ int main(int argc, char* argv[])
 				expectedLength = 7;
 			} else {
 				expectedLength = 1;
-				style = "41";
+				style = BACK_RED;
 			}
 
 			while(eatenLength < expectedLength) {
@@ -161,7 +194,7 @@ int main(int argc, char* argv[])
 				}
 			}
 
-			if (validLength != expectedLength) style = "41";
+			if (validLength != expectedLength) style = BACK_RED;
 
 			putChars(c, validLength, style);
 
@@ -170,7 +203,7 @@ int main(int argc, char* argv[])
 				goto RETRY;
 			}
 		} else {
-			putChars(c, 1, 0);			
+			putChars(c, 1, NULL);			
 		}
 
 		if (breakOnNl && *c == 0x0A) flushLine();
