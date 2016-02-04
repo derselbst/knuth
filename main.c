@@ -57,7 +57,7 @@ void flushLine() {
 	if (bytesLeft > 0) {
 		int spacesLeft = ((bytesLeft) * 3) - 1 + ceil((bytesLeft - 1) / 8.0);
 		while(spacesLeft--) printf(" ");
-	}	
+	}
 
 	printf(" | %s\n", ascBuf);
 
@@ -122,7 +122,6 @@ void putChars(unsigned char* data, unsigned int length, char* style) {
 int main(int argc, char* argv[])
 {
 	char opt;
-	FILE* source = stdin;
 
 	while ((opt = getopt (argc, argv, "snc:")) != -1) {
 		switch (opt) {
@@ -138,6 +137,8 @@ int main(int argc, char* argv[])
 				breakOnNl = 1;
 				break;
 			default:
+                fprintf(stderr, "Syntax: %s [OPTIONS] FILE\n", argv[0]);
+                fprintf(stderr, "        %s [OPTIONS] < FILE\n", argv[0]);
 				fprintf(stderr, "Options: \n");
 				fprintf(stderr, "\t-c n\tSet byte count per line (default 16)\n");
 				fprintf(stderr, "\t-s\tHighlight special chars and UTF-8 sequences\n");
@@ -147,13 +148,22 @@ int main(int argc, char* argv[])
 		}
 	}
 
+FILE* source;
+	if(!argv[optind])
+    {
+        puts("No file was specified, using stdin");
+        source=stdin;
+    }
+
+	 source = fopen(argv[optind], "rb");
+
 	temp = malloc(30);
 	ascBuf = malloc(bpl * 16);
 
 	unsigned char* c = malloc(15);
 	unsigned eatenLength = 1;
 
-	while(fread(c, 1, 1, stdin) == 1) {
+	while(fread(c, 1, 1, source) == 1) {
 		RETRY:
 		eatenLength = 1;
 		if (*c == 0) {
@@ -203,7 +213,7 @@ int main(int argc, char* argv[])
 				goto RETRY;
 			}
 		} else {
-			putChars(c, 1, NULL);			
+			putChars(c, 1, NULL);
 		}
 
 		if (breakOnNl && *c == 0x0A) flushLine();
