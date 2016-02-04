@@ -6,6 +6,10 @@
 #include <cmath>
 #include <map>
 #include <vector>
+#include <fstream>
+#include <string>
+#include <sstream>
+
 
 // more Select Graphic Rendition (SGR) parameters:
 // https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_codes
@@ -140,36 +144,52 @@ void putChars(unsigned char* data, unsigned int length, char* style)
     }
 }
 
+vector<string> split(const string &s, char delim)
+{
+    stringstream ss(s);
+    string item;
+    vector<string> tokens;
+    while (getline(ss, item, delim))
+    {
+        tokens.push_back(item);
+    }
+    return tokens;
+}
+
 typedef multimap<unsigned char, vector<int> > patternMap;
 
-void readPatternFile(FILE* textFile, patternMap& map)
+void readPatternFile(istream& textFile, patternMap& map)
 {
-    char c;
-    int currentKey = -1;
-        while(fread(&c, 1, 1, textFile) == 1)
+    while(textFile.good())
+    {
+
+        string s;
+        do
         {
-            if (c == '#')
+
+            getline(textFile, s);
+        }
+        while(s.size()<=0 || s[0]=='#');
+
+        vector<string> bytes = split(s, ';');
+
+        for(int i = 0; i<bytes.size(); i++)
+        {
+            int byte;
+
+            if(bytes[i] == "X")
             {
-                continue;
-            }
-            else if (c=='\n')
-            {
-                currentKey=-1;
-            }
-            else if (currentKey != -1 && c=='X')
-            {
-                map.insert ( std::pair<char,int>(static_cast<unsigned char>(currentKey),-1) );
-            }
-            else if (currentKey == -1)
-            {
-                currentKey=c;
-                map.insert ( std::pair<char,int>(static_cast<unsigned char>(currentKey),c) );
+                byte=-1;
             }
             else
             {
-                map.insert ( std::pair<char,int>(static_cast<unsigned char>(currentKey),c) );
+                 byte = strtol(bytes[i].c_str(), NULL, 16);
             }
+
+            // use first token as key
+            map.insert(std::pair<char,int>(static_cast<unsigned char>(strtol(bytes[0].c_str(), NULL, 16)),byte));
         }
+    }
 }
 
 int main(int argc, char* argv[])
@@ -212,8 +232,8 @@ int main(int argc, char* argv[])
 
     source = fopen(argv[optind], "rb");
 
-    temp = malloc(30);
-    ascBuf = malloc(bpl * 16);
+    temp = new char[30];
+    ascBuf = new char[bpl*16];
 
     unsigned char c;
 
