@@ -213,5 +213,9 @@ int main(int argc, char* argv[])
 
 	flushLine();
 
+        free(ascBuf);
+        free(c);
+        free(temp);
+
 	return 0;
 }
