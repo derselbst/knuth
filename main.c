@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <strings.h>
 #include <unistd.h>
 #include <math.h>
@@ -38,8 +39,8 @@
 #define BACK_CYAN    "46"
 #define BACK_WHITE   "47"
 
-short colorize = 0;
-short breakOnNl = 0;
+bool colorize = 0;
+bool breakOnNl = 0;
 char* seperator = " ";
 
 unsigned int bpl = 16; // Bytes Per Line
@@ -126,7 +127,7 @@ int main(int argc, char* argv[])
 	while ((opt = getopt (argc, argv, "snc:")) != -1) {
 		switch (opt) {
 			case 's':
-				colorize = 1;
+				colorize = true;
 				break;
 			case 'c':
 				bpl = atoi(optarg);
@@ -134,7 +135,7 @@ int main(int argc, char* argv[])
 				if (bpl > 1024) bpl = 1024;
 				break;
 			case 'n':
-				breakOnNl = 1;
+				breakOnNl = true;
 				break;
 			default:
                 fprintf(stderr, "Syntax: %s [OPTIONS] FILE\n", argv[0]);
