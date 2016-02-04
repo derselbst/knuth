@@ -147,10 +147,10 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	temp = (char*)malloc(30);
-	ascBuf = (char*)malloc(bpl * 16);
+	temp = malloc(30);
+	ascBuf = malloc(bpl * 16);
 
-	unsigned char* c = (char*)malloc(15);
+	unsigned char* c = malloc(15);
 	unsigned eatenLength = 1;
 
 	while(fread(c, 1, 1, stdin) == 1) {
