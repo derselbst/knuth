@@ -1,10 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <strings.h>
 #include <unistd.h>
-#include <math.h>
+#include <cmath>
+#include <map>
+#include <vector>
 
 // more Select Graphic Rendition (SGR) parameters:
 // https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_codes
@@ -38,6 +39,8 @@
 #define BACK_MAGENTA "45"
 #define BACK_CYAN    "46"
 #define BACK_WHITE   "47"
+
+using namespace std;
 
 bool colorize = 0;
 bool breakOnNl = 0;
@@ -137,6 +140,38 @@ void putChars(unsigned char* data, unsigned int length, char* style)
     }
 }
 
+typedef multimap<unsigned char, vector<int> > patternMap;
+
+void readPatternFile(FILE* textFile, patternMap& map)
+{
+    char c;
+    int currentKey = -1;
+        while(fread(&c, 1, 1, textFile) == 1)
+        {
+            if (c == '#')
+            {
+                continue;
+            }
+            else if (c=='\n')
+            {
+                currentKey=-1;
+            }
+            else if (currentKey != -1 && c=='X')
+            {
+                map.insert ( std::pair<char,int>(static_cast<unsigned char>(currentKey),-1) );
+            }
+            else if (currentKey == -1)
+            {
+                currentKey=c;
+                map.insert ( std::pair<char,int>(static_cast<unsigned char>(currentKey),c) );
+            }
+            else
+            {
+                map.insert ( std::pair<char,int>(static_cast<unsigned char>(currentKey),c) );
+            }
+        }
+}
+
 int main(int argc, char* argv[])
 {
     char opt;
@@ -180,13 +215,12 @@ int main(int argc, char* argv[])
     temp = malloc(30);
     ascBuf = malloc(bpl * 16);
 
-    unsigned char* c = malloc(15);
-    unsigned eatenLength = 1;
+    unsigned char c;
+
+    readPatternFile();
 
     while(fread(c, 1, 1, source) == 1)
     {
-RETRY:
-        eatenLength = 1;
         if (*c == 0)
         {
             putChars(c, 1, STYLE_FAINT);
@@ -197,67 +231,7 @@ RETRY:
         }
         else if (*c > 0x7F && colorize)
         {
-            int expectedLength = 0;
-            int validLength = 1;
-            char* style=BACK_BLUE;
-            if (*c < 0xC2)   // continuation or overlong
-            {
-                expectedLength = 1;
-                style = BACK_RED;
-            }
-            else if (*c < 0xE0)
-            {
-                expectedLength = 2;
-            }
-            else if (*c < 0xF0)
-            {
-                expectedLength = 3;
-            }
-            else if (*c < 0xF8)
-            {
-                expectedLength = 4;
-            }
-            else if (*c < 0xFC)
-            {
-                expectedLength = 5;
-            }
-            else if (*c < 0xFE)
-            {
-                expectedLength = 6;
-            }
-            else if (*c < 0xFF)
-            {
-                expectedLength = 7;
-            }
-            else
-            {
-                expectedLength = 1;
-                style = BACK_RED;
-            }
 
-            while(eatenLength < expectedLength)
-            {
-                if (fread(c + eatenLength, 1, 1, stdin) < 1) break;
-                eatenLength++;
-                if ((*(c + eatenLength - 1) & 0xC0) == 0x80)
-                {
-                    validLength++;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (validLength != expectedLength) style = BACK_RED;
-
-            putChars(c, validLength, style);
-
-            if (validLength != eatenLength)
-            {
-                *c = *(c + eatenLength - 1);
-                goto RETRY;
-            }
         }
         else
         {
@@ -272,7 +246,6 @@ RETRY:
     flushLine();
 
     free(ascBuf);
-    free(c);
     free(temp);
 
     return 0;
