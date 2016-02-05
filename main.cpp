@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -46,12 +47,13 @@
 
 using namespace std;
 
-
-string style[3][16]=
+const int NUMBER_OF_STYLES = 3;
+const int NUMBER_OF_COLORS = 15;
+string style[NUMBER_OF_STYLES][NUMBER_OF_COLORS]=
 {
-    {FORE_BLACK";"BACK_WHITE,               FORE_RED,               FORE_GREEN,                 FORE_YELLOW,                FORE_BLUE,                  FORE_MAGENTA,                FORE_CYAN,                 FORE_WHITE,                 BACK_BLACK";"FORE_WHITE,                BACK_RED,                   BACK_GREEN,                 BACK_YELLOW,                BACK_BLUE,                  BACK_MAGENTA,                   BACK_CYAN,                  BACK_WHITE},
-    {STYLE_BOLD";"FORE_BLACK";"BACK_WHITE,  STYLE_BOLD";"FORE_RED,  STYLE_BOLD";"FORE_GREEN,    STYLE_BOLD";"FORE_YELLOW,   STYLE_BOLD";"FORE_BLUE,     STYLE_BOLD";"FORE_MAGENTA,   STYLE_BOLD";"FORE_CYAN,    STYLE_BOLD";"FORE_WHITE,    STYLE_BOLD";"BACK_BLACK";"FORE_WHITE,   STYLE_BOLD";"BACK_RED,      STYLE_BOLD";"BACK_GREEN,    STYLE_BOLD";"BACK_YELLOW,   STYLE_BOLD";"BACK_BLUE,     STYLE_BOLD";"BACK_MAGENTA,      STYLE_BOLD";"BACK_CYAN,     STYLE_BOLD";"BACK_WHITE},
-    {STYLE_FAINT";"FORE_BLACK";"BACK_WHITE, STYLE_FAINT";"FORE_RED, STYLE_FAINT";"FORE_GREEN,   STYLE_FAINT";"FORE_YELLOW,  STYLE_FAINT";"FORE_BLUE,    STYLE_FAINT";"FORE_MAGENTA,  STYLE_FAINT";"FORE_CYAN,   STYLE_FAINT";"FORE_WHITE,   STYLE_FAINT";"BACK_BLACK";"FORE_WHITE,  STYLE_FAINT";"BACK_RED,     STYLE_FAINT";"BACK_GREEN    STYLE_FAINT";"BACK_YELLOW,  STYLE_FAINT";"BACK_BLUE,    STYLE_FAINT";"BACK_MAGENTA,     STYLE_FAINT";"BACK_CYAN,    STYLE_FAINT";"BACK_WHITE},
+    {FORE_BLACK";"BACK_WHITE,               FORE_RED,               FORE_GREEN,                 FORE_YELLOW,                FORE_BLUE";"BACK_WHITE                   FORE_MAGENTA,                FORE_CYAN,                 BACK_BLACK";"FORE_WHITE,                BACK_RED,                   BACK_GREEN,                 BACK_YELLOW,                BACK_BLUE,                  BACK_MAGENTA,                   BACK_CYAN,                  BACK_WHITE},
+    {STYLE_BOLD";"FORE_BLACK";"BACK_WHITE,  STYLE_BOLD";"FORE_RED,  STYLE_BOLD";"FORE_GREEN,    STYLE_BOLD";"FORE_YELLOW,   STYLE_BOLD";"FORE_BLUE";"BACK_WHITE,     STYLE_BOLD";"FORE_MAGENTA,   STYLE_BOLD";"FORE_CYAN,    STYLE_BOLD";"BACK_BLACK";"FORE_WHITE,   STYLE_BOLD";"BACK_RED,      STYLE_BOLD";"BACK_GREEN,    STYLE_BOLD";"BACK_YELLOW,   STYLE_BOLD";"BACK_BLUE,     STYLE_BOLD";"BACK_MAGENTA,      STYLE_BOLD";"BACK_CYAN,     STYLE_BOLD";"BACK_WHITE},
+    {STYLE_FAINT";"FORE_BLACK";"BACK_WHITE, STYLE_FAINT";"FORE_RED, STYLE_FAINT";"FORE_GREEN,   STYLE_FAINT";"FORE_YELLOW,  STYLE_FAINT";"FORE_BLUE";"BACK_WHITE,    STYLE_FAINT";"FORE_MAGENTA,  STYLE_FAINT";"FORE_CYAN,   STYLE_FAINT";"BACK_BLACK";"FORE_WHITE,  STYLE_FAINT";"BACK_RED,     STYLE_FAINT";"BACK_GREEN    STYLE_FAINT";"BACK_YELLOW,  STYLE_FAINT";"BACK_BLUE,    STYLE_FAINT";"BACK_MAGENTA,     STYLE_FAINT";"BACK_CYAN,    STYLE_FAINT";"BACK_WHITE},
 };
 
 
@@ -171,18 +173,23 @@ vector<string> split(const string &s, char delim)
 
 void readPatternFile(istream& textFile, patternMap& map)
 {
+    string s;
+    vector<string> bytes;
+
     while(textFile.good())
     {
-
-        string s;
-        do
+RETRY:
+        getline(textFile, s);
+        if(textFile.eof())
         {
-
-            getline(textFile, s);
+            break;
         }
-        while(s.size()<=0 || s[0]=='#');
+        else if(s.size()<=0 || s[0]=='#')
+        {
+            goto RETRY;
+        }
 
-        vector<string> bytes = split(s, ';');
+        bytes = split(s, ';');
 
         // use first token as key
         map.insert(std::pair<unsigned char, vector<string> >(static_cast<unsigned char>(strtol(bytes[0].c_str(), NULL, 16)),bytes));
@@ -245,7 +252,7 @@ int main(int argc, char* argv[])
 {
     char opt;
 
-    while ((opt = getopt (argc, argv, "snc:")) != -1)
+    while ((opt = getopt (argc, argv, "snc:p:")) != -1)
     {
         switch (opt)
         {
@@ -262,7 +269,8 @@ int main(int argc, char* argv[])
             break;
         case 'p':
         {
-            ifstream patternFile(optarg, ios::in|ios::binary);
+            ifstream patternFile;
+            patternFile.open(optarg, ios::in);
             if(!patternFile.good())
             {
                 fprintf(stderr,"some error with pattern");
@@ -296,9 +304,10 @@ int main(int argc, char* argv[])
 
     temp = new char[30];
     ascBuf = new char[bpl*16];
+    memset(ascBuf, 0, sizeof(ascBuf));
 
-int len;
-int fd;
+    int len;
+    int fd;
     unsigned char* file = static_cast<unsigned char*>(fileToMem(argv[optind], fd, len));
     for(int i=0; i<len; i++)
     {
@@ -306,8 +315,6 @@ int fd;
 
         pair <patternMap::iterator, patternMap::iterator> ret;
         ret = pattern.equal_range(ch);
-
-        cout << ch << " =>";
 
         int matchFound=0;
         for (patternMap::iterator it=ret.first; it!=ret.second; ++it)
@@ -324,22 +331,20 @@ int fd;
                     break;
                 }
                 matchFound++;
-                cout << ' ' << bytes[j];
             }
 
-            if(matchFound==bytes.size()-1)
+            if(matchFound==bytes.size())
             {
                 break;
             }
             matchFound=0;
 
         }
-        cout << '\n';
 
         if(matchFound!=0)
         {
             // colorize
-            putChars(file+i, matchFound, style[ch%3][ch%16].c_str());
+            putChars(file+i, matchFound, style[ch%NUMBER_OF_STYLES][ch%NUMBER_OF_COLORS].c_str());
         }
         else
         {
@@ -350,6 +355,10 @@ int fd;
         // skip the bytes we ve already printed
         i+=matchFound;
     }
+    flushLine();
+    cout << endl;
+
+    fileToMemFree(file, fd, len);
 
 //
 //    while(fread(c, 1, 1, source) == 1)
@@ -379,8 +388,8 @@ int fd;
 //
 //    flushLine();
 
-    free(ascBuf);
-    free(temp);
+    delete [](ascBuf);
+    delete [](temp);
 
     return 0;
 }
