@@ -177,10 +177,10 @@ int main(int argc, char* argv[])
 
     source = fopen(argv[optind], "rb");
 
-    temp = malloc(30);
-    ascBuf = malloc(bpl * 16);
+    temp = calloc(30);
+    ascBuf = calloc(bpl * 16);
 
-    unsigned char* c = malloc(15);
+    unsigned char* c = calloc(15);
     unsigned eatenLength = 1;
 
     while(fread(c, 1, 1, source) == 1)
