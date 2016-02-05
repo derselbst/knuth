@@ -59,7 +59,7 @@ string style[NUMBER_OF_STYLES][NUMBER_OF_COLORS]=
 
 bool colorize = 0;
 bool breakOnNl = 0;
-char* seperator = " ";
+const char* seperator = " ";
 
 unsigned int bpl = 16; // Bytes Per Line
 unsigned int currentPosition = 0;
@@ -116,7 +116,7 @@ char byteToChar(const char d)
 
 void putChars(unsigned char* data, unsigned int length, const char*const style)
 {
-    int i;
+    unsigned int i;
     int style_enabled = 0;
 
     for(i = 0; i < length; i++)
@@ -314,14 +314,14 @@ int main(int argc, char* argv[])
         pair <patternMap::iterator, patternMap::iterator> ret;
         ret = pattern.equal_range(ch);
 
-        int matchFound=0;
+        unsigned int matchFound=0;
         for (patternMap::iterator it=ret.first; it!=ret.second; ++it)
         {
             matchFound++;
 
             vector<string>& bytes = it->second;
 
-            for(int j=1; j<bytes.size(); j++)
+            for(unsigned int j=1; j<bytes.size(); j++)
             {
                 if(bytes[j]=="X");
                 else if(file[i+j]!=static_cast<unsigned char>(strtol(bytes[j].c_str(), NULL, 16)))
