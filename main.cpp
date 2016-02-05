@@ -65,8 +65,7 @@ unsigned int bpl = 16; // Bytes Per Line
 unsigned int currentPosition = 0;
 unsigned int lineStart = 0;
 
-char* temp;
-char* ascBuf;
+stringstream ascBuf;
 
 typedef multimap<unsigned char, vector<string> > patternMap;
 patternMap pattern;
@@ -83,17 +82,36 @@ void flushLine()
         while(spacesLeft--) printf(" ");
     }
 
-    printf(" | %s\n", ascBuf);
+    cout << " | " << ascBuf.str() << "\n";
 
-    ascBuf[0]='\0';
+    // clear content of ascBuf
+    ascBuf.str(std::string());
     lineStart = currentPosition;
 }
 
 void setStyle(const char*const style)
 {
-    sprintf(temp, "\x1B[%sm", style);
-    printf("%s", temp);
-    strcat(ascBuf, temp);
+    string temp="\x1B[";
+    temp+=style;
+    temp+="m";
+    cout << temp;
+    ascBuf << temp;
+}
+
+char byteToChar(const char d)
+{
+        if (d == 0)
+        {
+            return '.';
+        }
+        else if (d >= 0x20 && d < 0x7F)
+        {
+            return d;
+        }
+        else
+        {
+            return '.';
+        }
 }
 
 void putChars(unsigned char* data, unsigned int length, const char*const style)
@@ -118,20 +136,8 @@ void putChars(unsigned char* data, unsigned int length, const char*const style)
         }
 
         printf("%02X", data[i]);
+        ascBuf << byteToChar(data[i]);
 
-        if (data[i] == 0)
-        {
-            strcat(ascBuf, ".");
-        }
-        else if (data[i] >= 0x20 && data[i] < 0x7F)
-        {
-            sprintf(temp, "%c", data[i]);
-            strcat(ascBuf, temp);
-        }
-        else
-        {
-            strcat(ascBuf, ".");
-        }
 
         currentPosition++;
 
@@ -186,6 +192,7 @@ RETRY:
         }
         else if(s.size()<=0 || s[0]=='#')
         {
+            // we either got a comment line or syntax problem, so try next line
             goto RETRY;
         }
 
@@ -260,9 +267,7 @@ int main(int argc, char* argv[])
             colorize = true;
             break;
         case 'c':
-            bpl = atoi(optarg);
-            if (bpl < 2) bpl = 2;
-            if (bpl > 1024) bpl = 1024;
+            bpl = max(2, atoi(optarg));
             break;
         case 'n':
             breakOnNl = true;
@@ -293,18 +298,11 @@ int main(int argc, char* argv[])
         }
     }
 
-    FILE* source;
     if(!argv[optind])
     {
-        puts("No file was specified, using stdin");
-        source=stdin;
+        puts("No file was specified");
+        return EXIT_FAILURE;
     }
-
-    source = fopen(argv[optind], "rb");
-
-    temp = new char[30];
-    ascBuf = new char[bpl*16];
-    memset(ascBuf, 0, sizeof(ascBuf));
 
     int len;
     int fd;
@@ -359,37 +357,6 @@ int main(int argc, char* argv[])
     cout << endl;
 
     fileToMemFree(file, fd, len);
-
-//
-//    while(fread(c, 1, 1, source) == 1)
-//    {
-//
-//        if (*c == 0)
-//        {
-//            putChars(c, 1, STYLE_FAINT);
-//        }
-//        else if (*c < 32 && colorize)
-//        {
-//            putChars(c, 1, STYLE_BOLD";"FORE_YELLOW);
-//        }
-//        else if (*c > 0x7F && colorize)
-//        {
-//
-//        }
-//        else
-//        {
-//            putChars(c, 1, NULL);
-//        }
-//
-//        if (breakOnNl && *c == 0x0A) flushLine();
-//
-//        fflush(stdout);
-//    }
-//
-//    flushLine();
-
-    delete [](ascBuf);
-    delete [](temp);
 
     return 0;
 }
