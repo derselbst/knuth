@@ -46,6 +46,15 @@
 
 using namespace std;
 
+
+string style[3][16]=
+{
+    {FORE_BLACK";"BACK_WHITE,               FORE_RED,               FORE_GREEN,                 FORE_YELLOW,                FORE_BLUE,                  FORE_MAGENTA,                FORE_CYAN,                 FORE_WHITE,                 BACK_BLACK";"FORE_WHITE,                BACK_RED,                   BACK_GREEN,                 BACK_YELLOW,                BACK_BLUE,                  BACK_MAGENTA,                   BACK_CYAN,                  BACK_WHITE},
+    {STYLE_BOLD";"FORE_BLACK";"BACK_WHITE,  STYLE_BOLD";"FORE_RED,  STYLE_BOLD";"FORE_GREEN,    STYLE_BOLD";"FORE_YELLOW,   STYLE_BOLD";"FORE_BLUE,     STYLE_BOLD";"FORE_MAGENTA,   STYLE_BOLD";"FORE_CYAN,    STYLE_BOLD";"FORE_WHITE,    STYLE_BOLD";"BACK_BLACK";"FORE_WHITE,   STYLE_BOLD";"BACK_RED,      STYLE_BOLD";"BACK_GREEN,    STYLE_BOLD";"BACK_YELLOW,   STYLE_BOLD";"BACK_BLUE,     STYLE_BOLD";"BACK_MAGENTA,      STYLE_BOLD";"BACK_CYAN,     STYLE_BOLD";"BACK_WHITE},
+    {STYLE_FAINT";"FORE_BLACK";"BACK_WHITE, STYLE_FAINT";"FORE_RED, STYLE_FAINT";"FORE_GREEN,   STYLE_FAINT";"FORE_YELLOW,  STYLE_FAINT";"FORE_BLUE,    STYLE_FAINT";"FORE_MAGENTA,  STYLE_FAINT";"FORE_CYAN,   STYLE_FAINT";"FORE_WHITE,   STYLE_FAINT";"BACK_BLACK";"FORE_WHITE,  STYLE_FAINT";"BACK_RED,     STYLE_FAINT";"BACK_GREEN    STYLE_FAINT";"BACK_YELLOW,  STYLE_FAINT";"BACK_BLUE,    STYLE_FAINT";"BACK_MAGENTA,     STYLE_FAINT";"BACK_CYAN,    STYLE_FAINT";"BACK_WHITE},
+};
+
+
 bool colorize = 0;
 bool breakOnNl = 0;
 char* seperator = " ";
@@ -56,6 +65,9 @@ unsigned int lineStart = 0;
 
 char* temp;
 char* ascBuf;
+
+typedef multimap<unsigned char, vector<string> > patternMap;
+patternMap pattern;
 
 void flushLine()
 {
@@ -75,14 +87,14 @@ void flushLine()
     lineStart = currentPosition;
 }
 
-void setStyle(char* style)
+void setStyle(const char*const style)
 {
     sprintf(temp, "\x1B[%sm", style);
     printf("%s", temp);
     strcat(ascBuf, temp);
 }
 
-void putChars(unsigned char* data, unsigned int length, char* style)
+void putChars(unsigned char* data, unsigned int length, const char*const style)
 {
     int i;
     int style_enabled = 0;
@@ -156,7 +168,6 @@ vector<string> split(const string &s, char delim)
     return tokens;
 }
 
-typedef multimap<unsigned char, vector<int> > patternMap;
 
 void readPatternFile(istream& textFile, patternMap& map)
 {
@@ -173,22 +184,60 @@ void readPatternFile(istream& textFile, patternMap& map)
 
         vector<string> bytes = split(s, ';');
 
-        for(int i = 0; i<bytes.size(); i++)
-        {
-            int byte;
+        // use first token as key
+        map.insert(std::pair<unsigned char, vector<string> >(static_cast<unsigned char>(strtol(bytes[0].c_str(), NULL, 16)),bytes));
+    }
+}
 
-            if(bytes[i] == "X")
-            {
-                byte=-1;
-            }
-            else
-            {
-                 byte = strtol(bytes[i].c_str(), NULL, 16);
-            }
 
-            // use first token as key
-            map.insert(std::pair<char,int>(static_cast<unsigned char>(strtol(bytes[0].c_str(), NULL, 16)),byte));
-        }
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
+void* fileToMem(const char* filename, int& fd, int& len)
+{
+    fd = open (filename, O_RDONLY);
+    if (fd == -1)
+    {
+        perror ("open");
+        return NULL;
+    }
+
+    struct stat sb;
+    if (fstat (fd, &sb) == -1)
+    {
+        perror ("fstat");
+        return NULL;
+    }
+
+    if (!S_ISREG (sb.st_mode))
+    {
+        fprintf (stderr, "%s is not a file\n", filename);
+        return NULL;
+    }
+
+    len=sb.st_size;
+    void* p = mmap (0, len, PROT_READ, MAP_SHARED, fd, 0);
+    if (p == MAP_FAILED)
+    {
+        perror ("mmap");
+        return NULL;
+    }
+
+    return p;
+}
+
+void fileToMemFree(void *p, int& fd, int& len)
+{
+    if (munmap (p, len) == -1)
+    {
+        perror ("munmap");
+    }
+
+    if (close (fd) == -1)
+    {
+        perror ("close");
     }
 }
 
@@ -211,6 +260,19 @@ int main(int argc, char* argv[])
         case 'n':
             breakOnNl = true;
             break;
+        case 'p':
+        {
+            ifstream patternFile(optarg, ios::in|ios::binary);
+            if(!patternFile.good())
+            {
+                fprintf(stderr,"some error with pattern");
+            }
+            else
+            {
+                readPatternFile(patternFile, pattern);
+            }
+            break;
+        }
         default:
             fprintf(stderr, "Syntax: %s [OPTIONS] FILE\n", argv[0]);
             fprintf(stderr, "        %s [OPTIONS] < FILE\n", argv[0]);
@@ -235,35 +297,87 @@ int main(int argc, char* argv[])
     temp = new char[30];
     ascBuf = new char[bpl*16];
 
-    unsigned char c;
-
-    readPatternFile();
-
-    while(fread(c, 1, 1, source) == 1)
+int len;
+int fd;
+    unsigned char* file = static_cast<unsigned char*>(fileToMem(argv[optind], fd, len));
+    for(int i=0; i<len; i++)
     {
-        if (*c == 0)
-        {
-            putChars(c, 1, STYLE_FAINT);
-        }
-        else if (*c < 32 && colorize)
-        {
-            putChars(c, 1, STYLE_BOLD";"FORE_YELLOW);
-        }
-        else if (*c > 0x7F && colorize)
-        {
+        unsigned char& ch = file[i];
 
+        pair <patternMap::iterator, patternMap::iterator> ret;
+        ret = pattern.equal_range(ch);
+
+        cout << ch << " =>";
+
+        int matchFound=0;
+        for (patternMap::iterator it=ret.first; it!=ret.second; ++it)
+        {
+            matchFound++;
+
+            vector<string>& bytes = it->second;
+
+            for(int j=1; j<bytes.size(); j++)
+            {
+                if(bytes[j]=="X");
+                else if(file[i+j]!=static_cast<unsigned char>(strtol(bytes[j].c_str(), NULL, 16)))
+                {
+                    break;
+                }
+                matchFound++;
+                cout << ' ' << bytes[j];
+            }
+
+            if(matchFound==bytes.size()-1)
+            {
+                break;
+            }
+            matchFound=0;
+
+        }
+        cout << '\n';
+
+        if(matchFound!=0)
+        {
+            // colorize
+            putChars(file+i, matchFound, style[ch%3][ch%16].c_str());
         }
         else
         {
-            putChars(c, 1, NULL);
+            // only write current byte to file
+            putChars(file+i, 1, NULL);
         }
 
-        if (breakOnNl && *c == 0x0A) flushLine();
-
-        fflush(stdout);
+        // skip the bytes we ve already printed
+        i+=matchFound;
     }
 
-    flushLine();
+//
+//    while(fread(c, 1, 1, source) == 1)
+//    {
+//
+//        if (*c == 0)
+//        {
+//            putChars(c, 1, STYLE_FAINT);
+//        }
+//        else if (*c < 32 && colorize)
+//        {
+//            putChars(c, 1, STYLE_BOLD";"FORE_YELLOW);
+//        }
+//        else if (*c > 0x7F && colorize)
+//        {
+//
+//        }
+//        else
+//        {
+//            putChars(c, 1, NULL);
+//        }
+//
+//        if (breakOnNl && *c == 0x0A) flushLine();
+//
+//        fflush(stdout);
+//    }
+//
+//    flushLine();
 
     free(ascBuf);
     free(temp);
