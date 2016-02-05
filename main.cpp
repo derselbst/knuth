@@ -343,15 +343,15 @@ int main(int argc, char* argv[])
         {
             // colorize
             putChars(file+i, matchFound, style[ch%NUMBER_OF_STYLES][ch%NUMBER_OF_COLORS].c_str());
+
+            // skip the bytes we ve already printed
+            i+=matchFound-1;
         }
         else
         {
             // only write current byte to file
             putChars(file+i, 1, NULL);
         }
-
-        // skip the bytes we ve already printed
-        i+=matchFound;
     }
     flushLine();
     cout << endl;
